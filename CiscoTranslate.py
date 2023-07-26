@@ -1,5 +1,6 @@
 import re
-
+from pathlib import Path
+localPath = Path(__file__)
 
 # Options are 'config' or 'template'
 # Config creates an Extreme Config file
@@ -10,7 +11,7 @@ outputMode = "template_long".lower()
 
 #fileName = "Cisco To Extreme Translator/EDGE-4A-1.txt"
 fileName = "HIP-LOLASMIDDLE"
-outputFileName = "VSCode/Cisco To Extreme Translator/ " + fileName + "-" + outputMode + ".txt"
+outputFileName = fileName + "-" + outputMode + ".txt"
 
 class PortInfoClass:
     def __init__(self, stackID=-1, portNumber=-1, tagged=None, untagged=None, portDescription='', portEnabled=False):
@@ -31,7 +32,7 @@ vlanDict = {}
 portDict = {}
 
 #f = open('Cisco To Extreme Translator/EDGE-4A-1.txt')
-f = open('VSCode/Cisco To Extreme Translator/' + fileName + '.txt')
+f = open(localPath.with_name(fileName + '.txt'))
 lines = f.readlines()
 x = 0
 fullChunk = ""
@@ -189,7 +190,7 @@ for vlan in vlanDict.items():
         vlanDict.update({vlan[0] : vlan[1]})
     #print()
 
-f = open(outputFileName, "w")
+f = open(localPath.with_name(outputFileName), "w")
 
 #Output Mode: Config
 match (outputMode):
