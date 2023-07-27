@@ -8,9 +8,10 @@ localPath = Path(__file__)
 # Template_Long creates a list of ports and vlans separated out
 
 outputMode = "template_long".lower()
+showDisabled = False
 
 #fileName = "Cisco To Extreme Translator/EDGE-4A-1.txt"
-fileName = "HIP-LOLASMIDDLE"
+fileName = "HIPTHIRDFLOORLANSW02-2023-04-05T15_47_37.000Z"
 outputFileName = fileName + "-" + outputMode + ".txt"
 
 class PortInfoClass:
@@ -228,21 +229,21 @@ match (outputMode):
         concatDict = {}
         for key in portDict:
             port = portDict[key]
-            portDesc = port.portDescription
-            tagged = listString(port.tagged)
-            untagged = listString(port.untagged)
-            
-            # Create a list of all the ports with the same config
-            concatStr = portDesc + 't' + tagged + 'u' + untagged
-            tempList = []
-            if (concatStr in concatDict):
-                tempList = concatDict[concatStr]
-            tempList.append(key)
-            concatDict.update({concatStr:tempList}) 
+            if (port.portEnabled or showDisabled):
+                portDesc = port.portDescription
+                tagged = listString(port.tagged)
+                untagged = listString(port.untagged)
+                
+                # Create a list of all the ports with the same config
+                concatStr = portDesc + 't' + tagged + 'u' + untagged
+                tempList = []
+                if (concatStr in concatDict):
+                    tempList = concatDict[concatStr]
+                tempList.append(key)
+                concatDict.update({concatStr:tempList}) 
 
         for item in concatDict:
             key = concatDict[item][0]
-
             port = portDict[key]
             portDesc = port.portDescription
             tagged = listString(port.tagged)
@@ -262,19 +263,20 @@ match (outputMode):
     case 'template_long':
         for key in portDict:
             port = portDict[key]
-            portDesc = port.portDescription
-            tagged = listString(port.tagged)
-            untagged = listString(port.untagged)
-            f.write(key + ": \n")
-            if (port.portDescription != ""):
-                f.write("Description: " + portDesc + "\n")
-                if (len(port.tagged) > 0):
-                    f.write("Tagged vlans: " + tagged + "\n")
-                if (len(port.untagged) > 0):
-                    f.write("Untagged vlans: " + untagged + "\n")
-                if (len(port.tagged) + len(port.untagged) == 0):
-                    f.write("No vlans assigned\n")
-                f.write("\n")
+            if (port.portEnabled or showDisabled):
+                portDesc = port.portDescription
+                tagged = listString(port.tagged)
+                untagged = listString(port.untagged)
+                f.write(key + ": \n")
+                if (port.portDescription != ""):
+                    f.write("Description: " + portDesc + "\n")
+                    if (len(port.tagged) > 0):
+                        f.write("Tagged vlans: " + tagged + "\n")
+                    if (len(port.untagged) > 0):
+                        f.write("Untagged vlans: " + untagged + "\n")
+                    if (len(port.tagged) + len(port.untagged) == 0):
+                        f.write("No vlans assigned\n")
+                    f.write("\n")
     case _:
         print("Invalid Output Mode")
 
