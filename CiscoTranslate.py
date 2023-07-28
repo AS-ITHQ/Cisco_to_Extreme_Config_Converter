@@ -7,7 +7,7 @@ localPath = Path(__file__)
 # Template creates a list of port and the vlans associated with them, collapsed to make duplicates one entry
 # Template_Long creates a list of ports and vlans separated out
 
-outputMode = "template_long".lower()
+outputMode = "template"
 showDisabled = False
 
 #fileName = "Cisco To Extreme Translator/EDGE-4A-1.txt"
@@ -22,6 +22,7 @@ class PortInfoClass:
         self.untagged = untagged if untagged is not None else []
         self.portDescription = portDescription
         self.portEnabled = portEnabled
+        self.isTrunk = False
 
 class VlanInfoClass:
     def __init__(self, vlanName='', tagged=None, untagged=None):
@@ -123,6 +124,11 @@ while x < len(lines):
                     case _:
                         print("ERROR: UNRECOGNISED TYPE")
 
+        # Check if the port is a trunk port
+        trunkCheck = re.search(r"switchport mode trunk\n", fullChunk)
+        if (trunkCheck != None):
+            portInfo.isTrunk = True
+
         # Add the description of the port to the config
         portDesc = re.search(r"description (.+)\n", fullChunk)
         if (portDesc != None):
@@ -194,7 +200,7 @@ for vlan in vlanDict.items():
 f = open(localPath.with_name(outputFileName), "w")
 
 #Output Mode: Config
-match (outputMode):
+match (outputMode.lower()):
     case 'config': 
         #Output port description config
         #configure ports 1:47 description-string "Uplink to Firewall 02"
@@ -233,9 +239,10 @@ match (outputMode):
                 portDesc = port.portDescription
                 tagged = listString(port.tagged)
                 untagged = listString(port.untagged)
+                isTrunk = port.isTrunk
                 
                 # Create a list of all the ports with the same config
-                concatStr = portDesc + 't' + tagged + 'u' + untagged
+                concatStr = 't' + tagged + 'u' + untagged + str(isTrunk)
                 tempList = []
                 if (concatStr in concatDict):
                     tempList = concatDict[concatStr]
@@ -253,13 +260,16 @@ match (outputMode):
             f.write(ports + ": \n")
             if (port.portDescription != ""):
                 f.write("Description: " + portDesc + "\n")
-                if (len(port.tagged) > 0):
-                    f.write("Tagged vlans: " + tagged + "\n")
-                if (len(port.untagged) > 0):
-                    f.write("Untagged vlans: " + untagged + "\n")
-                if (len(port.tagged) + len(port.untagged) == 0):
+            if (len(port.tagged) > 0):
+                f.write("Tagged vlans: " + tagged + "\n")
+            if (len(port.untagged) > 0):
+                f.write("Untagged vlans: " + untagged + "\n")
+            if (len(port.tagged) + len(port.untagged) == 0):
+                if (port.isTrunk == True):
+                    f.write("Trunk port\n")
+                else:
                     f.write("No vlans assigned\n")
-                f.write("\n")
+            f.write("\n")
     case 'template_long':
         for key in portDict:
             port = portDict[key]
@@ -270,13 +280,16 @@ match (outputMode):
                 f.write(key + ": \n")
                 if (port.portDescription != ""):
                     f.write("Description: " + portDesc + "\n")
-                    if (len(port.tagged) > 0):
+                if (len(port.tagged) > 0):
                         f.write("Tagged vlans: " + tagged + "\n")
-                    if (len(port.untagged) > 0):
+                if (len(port.untagged) > 0):
                         f.write("Untagged vlans: " + untagged + "\n")
-                    if (len(port.tagged) + len(port.untagged) == 0):
+                if (len(port.tagged) + len(port.untagged) == 0):
+                    if (port.isTrunk == True):
+                        f.write("Trunk port\n")
+                    else:
                         f.write("No vlans assigned\n")
-                    f.write("\n")
+                f.write("\n")
     case _:
         print("Invalid Output Mode")
 
