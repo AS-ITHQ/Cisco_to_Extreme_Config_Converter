@@ -7,11 +7,11 @@ localPath = Path(__file__)
 # Template creates a list of port and the vlans associated with them, collapsed to make duplicates one entry
 # Template_Long creates a list of ports and vlans separated out
 
-outputMode = "template"
+outputMode = "template_long"
 showDisabled = False
 
 #fileName = "Cisco To Extreme Translator/EDGE-4A-1.txt"
-fileName = "HIPTHIRDFLOORLANSW02-2023-04-05T15_47_37.000Z"
+fileName = "EDGE-4B-1"
 outputFileName = fileName + "-" + outputMode + ".txt"
 
 class PortInfoClass:
@@ -23,6 +23,7 @@ class PortInfoClass:
         self.portDescription = portDescription
         self.portEnabled = portEnabled
         self.isTrunk = False
+        self.subslot = None
 
 class VlanInfoClass:
     def __init__(self, vlanName='', tagged=None, untagged=None):
@@ -33,7 +34,6 @@ class VlanInfoClass:
 vlanDict = {}
 portDict = {}
 
-#f = open('Cisco To Extreme Translator/EDGE-4A-1.txt')
 f = open(localPath.with_name(fileName + '.txt'))
 lines = f.readlines()
 x = 0
@@ -97,7 +97,7 @@ while x < len(lines):
             vlanInfo.vlanName = vlanName
             vlanDict.update({vlanID:vlanInfo})
 
-    interface = re.search(r"interface [a-zA-Z]+(\d+)\/\d+\/(\d+)", fullChunk)    
+    interface = re.search(r"interface [a-zA-Z]+(\d+)\/(\d+)\/(\d+)\n", fullChunk)    
     if (interface != None):
         portInfo = PortInfoClass()
         portInfo.tagged = []
@@ -111,7 +111,7 @@ while x < len(lines):
         if (portTypes != None):
             for portType in portTypes:
                 portList = splitVlans(portType[1])
-                match portType[0]:
+                match (portType[0]):
                     case 'trunk':
                         portInfo.tagged += portList
                         portInfo.tagged = list(set(portInfo.tagged))
@@ -139,10 +139,12 @@ while x < len(lines):
         if (portDisabled == None):
             portInfo.portEnabled = True
 
-        portID = interface.group(1) + ":" + interface.group(2)
+        portID = interface.group(1) + ":" + interface.group(3)
+        portInfo.subslot = interface.group(2)
         portInfo.stackID = interface.group(1)
         portInfo.portNumber = interface.group(2)
-        portDict.update({portID:portInfo})
+        if (portInfo.subslot == '0'):
+            portDict.update({portID:portInfo})
     fullChunk = ""
 f.close()
 
@@ -280,6 +282,8 @@ match (outputMode.lower()):
                 f.write(key + ": \n")
                 if (port.portDescription != ""):
                     f.write("Description: " + portDesc + "\n")
+                if (port.subslot != None):
+                    f.write("Subslot: " + port.subslot + "\n")
                 if (len(port.tagged) > 0):
                         f.write("Tagged vlans: " + tagged + "\n")
                 if (len(port.untagged) > 0):
