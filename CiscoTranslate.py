@@ -10,7 +10,6 @@ localPath = Path(__file__)
 outputMode = "template_long"
 showDisabled = False
 
-#fileName = "Cisco To Extreme Translator/EDGE-4A-1.txt"
 fileName = "EDGE-4B-1"
 outputFileName = fileName + "-" + outputMode + ".txt"
 
@@ -205,27 +204,23 @@ f = open(localPath.with_name(outputFileName), "w")
 match (outputMode.lower()):
     case 'config': 
         #Output port description config
-        #configure ports 1:47 description-string "Uplink to Firewall 02"
         for key in portDict:
             if (portDict[key].portDescription != ""):
                 f.write("configure ports " + key + " description-string \"" + portDict[key].portDescription + "\"\n")
         f.write("\n\n")
 
         #Output port shutdown config
-        #disable port 1:1,1:2
         for key in portDict:
             if (portDict[key].portEnabled == False):
                 f.write("disable port " + key + "\n")
         f.write("\n\n")
 
         #Output vlan creation config
-        #create vlan "Vericc" tag 57
         for vlan in vlanDict:
             f.write("create vlan \"" + vlanDict[vlan].vlanName + "\" tag " + str(vlan) + "\n")
         f.write("\n\n")
 
         #Output vlan port config
-        #configure vlan Data add ports 1:2,1:47-48,2:2 tagged
         for key, value in vlanPortDict.items():
             if (len(value[0]) > 0):
                 f.write("configure vlan " + vlanDict[key].vlanName + " add ports " + value[0] + " tagged\n")
